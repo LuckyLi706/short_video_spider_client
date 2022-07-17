@@ -2,15 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
-import 'package:get/get_navigation/src/routes/transitions_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:short_video_spider_client/pages/home/home_page.dart';
 import 'package:short_video_spider_client/utils/file_util.dart';
 import 'package:short_video_spider_client/utils/keyboard_util.dart';
+import 'package:short_video_spider_client/utils/screen_util.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
 
 var dio = Dio();
@@ -26,12 +22,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // return ScreenUtilInit(   ///屏幕适配的工具库
-    //     designSize: const Size(1920, 1080), //屏幕适配，设定设计图给的尺寸1920*1080
-    //     minTextAdapt: true,
-    //     splitScreenMode: true,
-    //     builder: (context, child) {
-    return GetMaterialApp(
+    return MaterialApp(
       ///所有的路由文件
       //getPages: RoutesPage.pages,
       ///不展示右上角的debug标记
@@ -47,8 +38,7 @@ class MyApp extends StatelessWidget {
       ),
 
       ///国际化支持-备用语言
-      defaultTransition: Transition.fade, //默认的路由切换动画,淡入淡出
-      home: HomePage(),
+      home: const HomePage(),
       //initialBinding: SplashBinding(),
     );
     //});

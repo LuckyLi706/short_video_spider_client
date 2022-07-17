@@ -1,6 +1,4 @@
-import 'package:get/get.dart';
-
 class ScreenUtils {
-  static double width = Get.width;
-  static double height = Get.height;
+  static double width = 0.0;
+  static double height = 0.0;
 }

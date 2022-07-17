@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:short_video_spider_client/pages/mobile/download_page.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
 
 import '../../config/constants.dart';
@@ -16,7 +17,6 @@ var imageList = [];
 var urlDownloadList = [];
 var md5UrlDownloadList = [];
 
-
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -24,6 +24,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() {
     return HomePageState();
   }
+}
+
+_getWidthHeight(BuildContext context) {
+  final size = MediaQuery.of(context).size;
+  ScreenUtils.width = size.width;
+  ScreenUtils.height = size.height;
 }
 
 class HomePageState extends State<HomePage> {
@@ -37,8 +43,9 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    _getWidthHeight(context);
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text(Constants.APP_NAME),
           actions: [
@@ -69,26 +76,24 @@ class HomePageState extends State<HomePage> {
     } else {
       return Column(children: [
         Expanded(
-          flex: 3,
+            flex: 3,
             child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Container(
-            child: _getBehaviorWidget(),
-          ),
-        )),
-        Expanded(
-          flex: 1,
-          child: _getListView(),
-        )
+              padding: const EdgeInsets.all(20),
+              child: Container(
+                child: _getBehaviorWidget(),
+              ),
+            )),
       ]);
     }
   }
 
   final TextEditingController _logTextController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
   final TextEditingController _maxCursorTextController =
       TextEditingController(text: "0");
   final TextEditingController _shareUrlTextController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  String? cachePath = "";
 
   Widget _getListView() {
     return ListView.builder(
@@ -110,7 +115,7 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               Text(
-                  "文件：${SpUtil.getCachePath()}${Platform.pathSeparator}${md5UrlDownloadList[index]}.mp4"),
+                  "文件：$cachePath${Platform.pathSeparator}${md5UrlDownloadList[index]}.mp4"),
               Text("地址：${urlDownloadList[index]}")
             ],
           ),
@@ -176,6 +181,7 @@ class HomePageState extends State<HomePage> {
               child: TextButton(
                   onPressed: () async {
                     String? baseUrl = await SpUtil.getBaseUrl();
+                    cachePath = await SpUtil.getCachePath();
                     if (baseUrl == null) {
                       showLog("baseUrl不能为空，请先在设置里面去配置");
                       return;
@@ -197,7 +203,7 @@ class HomePageState extends State<HomePage> {
                         }
                       }
                       Response result =
-                          await dio.get("$baseUrl/douyin/single?url=${url}");
+                          await dio.get("$baseUrl/douyin/single?url=$url");
                       print(result.data);
                       setState(() {
                         imageList.clear();
@@ -209,6 +215,7 @@ class HomePageState extends State<HomePage> {
                           md5UrlDownloadList.add(_getMd5(single.videoUrl!));
                           urlDownloadList.add(single.videoUrl!);
                           imageList.add(single.coverImageUrl!);
+                          showLog("获取实际地址成功");
                         } else {
                           showLog("获取真实地址失败：${result.data.toString()}");
                         }
@@ -230,7 +237,7 @@ class HomePageState extends State<HomePage> {
                         }
                       }
                       Response result = await dio.get(
-                          "$baseUrl/douyin/list?url=${url}&max_cursor=${_maxCursorTextController.text}");
+                          "$baseUrl/douyin/list?url=$url&max_cursor=${_maxCursorTextController.text}");
                       setState(() {
                         imageList.clear();
                         urlDownloadList.clear();
@@ -248,6 +255,7 @@ class HomePageState extends State<HomePage> {
                             urlDownloadList.add(list.videoUrlList[i]);
                             imageList.add(list.coverImageUrlList[i]);
                           }
+                          showLog("获取实际地址成功");
                         } else {
                           showLog("获取真实地址失败：${result.data.toString()}");
                         }
@@ -265,6 +273,14 @@ class HomePageState extends State<HomePage> {
                     }
                     if (urlDownloadList.isEmpty) {
                       showLog("请先获取真实地址");
+                      return;
+                    }
+                    if (ScreenUtils.height > ScreenUtils.width) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return DownloadPage(
+                            imageList, urlDownloadList, md5UrlDownloadList);
+                      }));
                       return;
                     }
                     for (int i = 0; i < urlDownloadList.length; i++) {
@@ -299,7 +315,7 @@ class HomePageState extends State<HomePage> {
                   child: const Text("清除日志")))
         ]),
         SizedBox(
-          height: 100,
+          height: 300,
           child: Stack(
             alignment: Alignment.topLeft,
             //fit: StackFit.expand, //未定位widget占满Stack整个空间
@@ -424,7 +440,7 @@ class HomePageState extends State<HomePage> {
   TextEditingController cacheController = TextEditingController();
   TextEditingController urlController = TextEditingController();
 
-  void _showSettingDialog(BuildContext context) async{
+  void _showSettingDialog(BuildContext context) async {
     cacheController.text = await SpUtil.getCachePath() ?? '';
     urlController.text = await SpUtil.getBaseUrl() ?? '';
     showDialog(

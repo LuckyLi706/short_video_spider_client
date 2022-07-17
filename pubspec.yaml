@@ -37,8 +37,6 @@ dependencies:
   path_provider: ^2.0.11
   # 屏幕适配
   flutter_screenutil: ^5.0.1
-  # 多种工具的集合
-  get: ^4.6.5
   # 网络请求
   dio: ^4.0.6
   # key-value存储
