@@ -16,43 +16,6 @@ var imageList = [];
 var urlDownloadList = [];
 var md5UrlDownloadList = [];
 
-class UrlListView extends StatelessWidget {
-  const UrlListView({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    //下划线widget预定义以供复用。
-    return ListView.builder(
-      itemCount: imageList.length,
-      //列表项构造器
-      itemBuilder: (BuildContext context, int index) {
-        return Card(
-          elevation: 1.0,
-          margin: const EdgeInsets.all(10),
-          child: Wrap(
-            children: <Widget>[
-              Container(
-                height: 100,
-                width: 100,
-                margin: const EdgeInsets.all(10),
-                child: Image.network(
-                  imageList[index],
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Wrap(direction: Axis.vertical, children: [
-                Text(
-                    "文件路径：${SpUtil.getBaseUrl()}/${md5UrlDownloadList[index]}"),
-                Text("真实路径：${urlDownloadList[index]}"),
-              ])
-            ],
-          ),
-        );
-      },
-      //分割器构造器
-    );
-  }
-}
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -75,6 +38,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text(Constants.APP_NAME),
           actions: [
@@ -105,6 +69,7 @@ class HomePageState extends State<HomePage> {
     } else {
       return Column(children: [
         Expanded(
+          flex: 3,
             child: Padding(
           padding: const EdgeInsets.all(20),
           child: Container(
@@ -112,6 +77,7 @@ class HomePageState extends State<HomePage> {
           ),
         )),
         Expanded(
+          flex: 1,
           child: _getListView(),
         )
       ]);
@@ -203,13 +169,13 @@ class HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(
-          height: 20,
+          height: 10,
         ),
         Row(children: [
           Expanded(
               child: TextButton(
                   onPressed: () async {
-                    String? baseUrl = SpUtil.getBaseUrl();
+                    String? baseUrl = await SpUtil.getBaseUrl();
                     if (baseUrl == null) {
                       showLog("baseUrl不能为空，请先在设置里面去配置");
                       return;
@@ -292,7 +258,7 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
-                    String? cachePath = SpUtil.getCachePath();
+                    String? cachePath = await SpUtil.getCachePath();
                     if (cachePath == null) {
                       showLog("缓存地址为空，请先去设置进行配置");
                       return;
@@ -333,7 +299,7 @@ class HomePageState extends State<HomePage> {
                   child: const Text("清除日志")))
         ]),
         SizedBox(
-          height: 200,
+          height: 100,
           child: Stack(
             alignment: Alignment.topLeft,
             //fit: StackFit.expand, //未定位widget占满Stack整个空间
@@ -458,9 +424,9 @@ class HomePageState extends State<HomePage> {
   TextEditingController cacheController = TextEditingController();
   TextEditingController urlController = TextEditingController();
 
-  void _showSettingDialog(BuildContext context) {
-    cacheController.text = SpUtil.getCachePath() ?? '';
-    urlController.text = SpUtil.getBaseUrl() ?? '';
+  void _showSettingDialog(BuildContext context) async{
+    cacheController.text = await SpUtil.getCachePath() ?? '';
+    urlController.text = await SpUtil.getBaseUrl() ?? '';
     showDialog(
         context: context,
         barrierDismissible: false,

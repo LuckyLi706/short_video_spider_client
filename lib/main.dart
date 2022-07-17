@@ -16,6 +16,7 @@ import 'package:short_video_spider_client/utils/sp_util.dart';
 var dio = Dio();
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   Injection.init();
   runApp(const MyApp());
 }
@@ -59,11 +60,11 @@ class MyApp extends StatelessWidget {
 class Injection {
   static Future<void> init() async {
     // shared_preferences
-    await Get.putAsync(() => SharedPreferences.getInstance());
-    if (SpUtil.getBaseUrl() == null) {
+    await SharedPreferences.getInstance();
+    if (await SpUtil.getBaseUrl() == null) {
       SpUtil.updateBaseUrl("http://192.168.1.103");
     }
-    if (SpUtil.getCachePath() == null) {
+    if (await SpUtil.getCachePath() == null) {
       SpUtil.updateCachePath(await FileUtils.getFileDirectory());
     }
     //Get.lazyPut(() =>RequestRepository());

@@ -43,8 +43,6 @@ dependencies:
   dio: ^4.0.6
   # key-value存储
   shared_preferences: ^2.0.15
-  # 网络检测
-  connectivity_plus: ^2.3.5
   # 吐司
   fluttertoast: ^8.0.9
   file_picker: ^4.2.4
