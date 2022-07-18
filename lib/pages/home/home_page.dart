@@ -171,7 +171,10 @@ class HomePageState extends State<HomePage> {
                         return;
                       }
                       Response result = await dio
-                          .get("${Constants.BASE_URL}/douyin/single?url=$url");
+                          .get("${Constants.BASE_URL}/douyin/single?url=$url")
+                          .catchError((e) {
+                        showLog("出现异常：${e.toString()}");
+                      });
                       setState(() {
                         imageList.clear();
                         urlDownloadList.clear();
@@ -244,7 +247,6 @@ class HomePageState extends State<HomePage> {
                       String end = urlDownloadList[i].toString().endsWith("mp3")
                           ? "mp3"
                           : "mp4";
-                      print(end);
                       String filePath =
                           "${Constants.CACHE_PATH + Platform.pathSeparator + md5UrlDownloadList[i]}.$end";
                       if (File(filePath).existsSync()) {
@@ -365,9 +367,11 @@ class HomePageState extends State<HomePage> {
                     onPressed: () {
                       if (urlController.text.isNotEmpty) {
                         SpUtil.updateBaseUrl(urlController.text);
+                        Constants.BASE_URL = urlController.text;
                       }
                       if (cacheController.text.isNotEmpty) {
                         SpUtil.updateCachePath(cacheController.text);
+                        Constants.CACHE_PATH = cacheController.text;
                       }
                       Navigator.of(context).pop();
                     },
