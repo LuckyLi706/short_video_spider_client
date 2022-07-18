@@ -6,7 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
+import 'package:short_video_spider_client/utils/short_video_util.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
+import 'package:short_video_spider_client/utils/widget_util.dart';
 
 import '../../config/constants.dart';
 import '../../model/douyin_list.dart';
@@ -26,6 +28,7 @@ class HomePage extends StatefulWidget {
   }
 }
 
+//获取当前的界面大小
 _getWidthHeight(BuildContext context) {
   final size = MediaQuery.of(context).size;
   ScreenUtils.width = size.width;
@@ -63,7 +66,8 @@ class HomePageState extends State<HomePage> {
     if (ScreenUtils.width > ScreenUtils.height) {
       return Row(children: [
         Expanded(
-          child: _getListView(),
+          child: WidgetUtils.getListView(
+              imageList, md5UrlDownloadList, urlDownloadList),
         ),
         Expanded(
             child: Padding(
@@ -93,37 +97,6 @@ class HomePageState extends State<HomePage> {
   final TextEditingController _maxCursorTextController =
       TextEditingController(text: "0");
   final TextEditingController _shareUrlTextController = TextEditingController();
-  String? cachePath = "";
-
-  Widget _getListView() {
-    return ListView.builder(
-      itemCount: imageList.length,
-      //列表项构造器
-      itemBuilder: (BuildContext context, int index) {
-        return Card(
-          elevation: 1.0,
-          margin: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                height: 200,
-                margin: const EdgeInsets.all(10),
-                child: Image.network(
-                  imageList[index],
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Text(
-                  "文件：$cachePath${Platform.pathSeparator}${md5UrlDownloadList[index]}.mp4"),
-              Text("地址：${urlDownloadList[index]}")
-            ],
-          ),
-        );
-      },
-      //分割器构造器
-    );
-  }
 
   Widget _getBehaviorWidget() {
     return Column(
@@ -180,9 +153,8 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
-                    String? baseUrl = await SpUtil.getBaseUrl();
-                    cachePath = await SpUtil.getCachePath();
-                    if (baseUrl == null) {
+                    String text = _shareUrlTextController.text;
+                    if (Constants.BASE_URL.isEmpty) {
                       showLog("baseUrl不能为空，请先在设置里面去配置");
                       return;
                     }
@@ -192,19 +164,14 @@ class HomePageState extends State<HomePage> {
                     }
                     if (currentShortVideoDownloadType ==
                         shortVideoDownloadType[0]) {
-                      String url = "";
-                      List<String> text =
-                          _shareUrlTextController.text.split(" ");
-                      for (var element in text) {
-                        if (element.startsWith("http") &&
-                            element.contains("douyin")) {
-                          url = element;
-                          break;
-                        }
+                      //单个视频
+                      String url = ShortVideoUtil.getDouYinUrl(text);
+                      if (url.isEmpty) {
+                        showLog("解析URL失败，请重新复制");
+                        return;
                       }
-                      Response result =
-                          await dio.get("$baseUrl/douyin/single?url=$url");
-                      print(result.data);
+                      Response result = await dio
+                          .get("${Constants.BASE_URL}/douyin/single?url=$url");
                       setState(() {
                         imageList.clear();
                         urlDownloadList.clear();
@@ -215,9 +182,9 @@ class HomePageState extends State<HomePage> {
                           md5UrlDownloadList.add(_getMd5(single.videoUrl!));
                           urlDownloadList.add(single.videoUrl!);
                           imageList.add(single.coverImageUrl!);
-                          showLog("获取实际地址成功");
+                          showLog("获取视频地址成功");
                         } else {
-                          showLog("获取真实地址失败：${result.data.toString()}");
+                          showLog("获取视频地址成功：${result.data.toString()}");
                         }
                       });
                     } else if (currentShortVideoDownloadType ==
@@ -226,18 +193,9 @@ class HomePageState extends State<HomePage> {
                         showLog("max_cursor不能为空");
                         return;
                       }
-                      String url = "";
-                      List<String> text =
-                          _shareUrlTextController.text.split(" ");
-                      for (var element in text) {
-                        if (element.startsWith("http") &&
-                            element.contains("douyin")) {
-                          url = element;
-                          break;
-                        }
-                      }
+                      String url = ShortVideoUtil.getDouYinUrl(text);
                       Response result = await dio.get(
-                          "$baseUrl/douyin/list?url=$url&max_cursor=${_maxCursorTextController.text}");
+                          "${Constants.BASE_URL}/douyin/list?url=$url&max_cursor=${_maxCursorTextController.text}");
                       setState(() {
                         imageList.clear();
                         urlDownloadList.clear();
@@ -255,9 +213,9 @@ class HomePageState extends State<HomePage> {
                             urlDownloadList.add(list.videoUrlList[i]);
                             imageList.add(list.coverImageUrlList[i]);
                           }
-                          showLog("获取实际地址成功");
+                          showLog("获取视频地址成功,一共${urlDownloadList.length}个视频");
                         } else {
-                          showLog("获取真实地址失败：${result.data.toString()}");
+                          showLog("获取视频地址失败：${result.data.toString()}");
                         }
                       });
                     }
@@ -266,13 +224,12 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
-                    String? cachePath = await SpUtil.getCachePath();
-                    if (cachePath == null) {
+                    if (Constants.CACHE_PATH.isEmpty) {
                       showLog("缓存地址为空，请先去设置进行配置");
                       return;
                     }
                     if (urlDownloadList.isEmpty) {
-                      showLog("请先获取真实地址");
+                      showLog("请先获取视频地址");
                       return;
                     }
                     if (ScreenUtils.height > ScreenUtils.width) {
@@ -284,19 +241,22 @@ class HomePageState extends State<HomePage> {
                       return;
                     }
                     for (int i = 0; i < urlDownloadList.length; i++) {
+                      String end = urlDownloadList[i].toString().endsWith("mp3")
+                          ? "mp3"
+                          : "mp4";
+                      print(end);
                       String filePath =
-                          "${cachePath + Platform.pathSeparator + md5UrlDownloadList[i]}.mp4";
+                          "${Constants.CACHE_PATH + Platform.pathSeparator + md5UrlDownloadList[i]}.$end";
                       if (File(filePath).existsSync()) {
                         showLog(
-                            "一共${urlDownloadList.length}个视频：\n第${i + 1}个视频已存在,跳过");
+                            "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
                         continue;
                       }
                       dio.options = BaseOptions(headers: {
                         "user-agent":
                             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
                       });
-                      await dio.download(urlDownloadList[i],
-                          "${cachePath + Platform.pathSeparator + md5UrlDownloadList[i]}.mp4",
+                      await dio.download(urlDownloadList[i], filePath,
                           onReceiveProgress: (int count, int total) {
                         showLog(
                             "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
@@ -314,38 +274,9 @@ class HomePageState extends State<HomePage> {
                   },
                   child: const Text("清除日志")))
         ]),
-        SizedBox(
-          height: 300,
-          child: Stack(
-            alignment: Alignment.topLeft,
-            //fit: StackFit.expand, //未定位widget占满Stack整个空间
-            children: <Widget>[
-              Positioned(
-                top: 20.0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: TextField(
-                  scrollController: _scrollController,
-                  controller: _logTextController,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  //不限制行数
-                  autofocus: false,
-                  // 长按输入的文本, 设置是否显示剪切，复制，粘贴按钮, 默认是显示的
-                  enableInteractiveSelection: true,
-                  style: const TextStyle(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: "日志信息",
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5.0),
-                        borderSide: const BorderSide()),
-                  ),
-                ),
-              )
-            ],
-          ),
-        )
+        Expanded(
+            child:
+                WidgetUtils.getLogWidget(_scrollController, _logTextController))
       ],
     );
   }
@@ -364,6 +295,7 @@ class HomePageState extends State<HomePage> {
       return;
     }
     if (!isAppend) {
+      showLogText = "";
       _logTextController.text = "${msg.trim()}\n";
       return;
     }
@@ -384,42 +316,9 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  /**
-
-   */
-
-  /**
-      TextButton(
-      onPressed: () async {
-      var dio = learn.Dio();
-      learn.Response result = await dio.get(
-      "http://192.168.1.109:8080/douyin/list?url=https://www.douyin.com/user/MS4wLjABAAAAg5Y5_VVZMSCOSoOYeF0wpHhX2x4f6ZyckCQ0ZQJk9ls&is_origin=0&max_cursor=0");
-      print(result.data);
-
-      DouYinList list = DouYinList.fromJson(result.data);
-      setState(() {
-      imageList.clear();
-      urlDownloadList.clear();
-      md5UrlDownloadList.clear();
-      for (int i = 0;
-      i < list.coverImageUrlList.length;
-      i++) {
-      md5UrlDownloadList.add(list.videoUrlList[i]);
-      urlDownloadList.add(list.videoUrlList[i]);
-      imageList.add(list.coverImageUrlList[i]);
-      }
-
-      // md5UrlDownloadList.add(singl);
-      // urlDownloadList.add(single.videoUrl!);
-      // imageList.add(single.coverImageUrl!);
-      });
-      },
-      child: Text("下载数据"))
-   */
-
   TextEditingController downLoadUrlController = TextEditingController();
 
-  var shortVideoDownloadType = ["单个", "多个", "用户信息"];
+  var shortVideoDownloadType = ["单个", "多个"];
   List<DropdownMenuItem<String>> shortVideoDownloadDdmi = [];
   var currentShortVideoDownloadType = '';
 

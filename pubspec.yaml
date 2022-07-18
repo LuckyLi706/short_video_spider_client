@@ -44,7 +44,6 @@ dependencies:
   # 吐司
   fluttertoast: ^8.0.9
   file_picker: ^4.2.4
-  flutter_toastr: ^1.0.3
   crypto: ^2.0.6   #md5加密
 
 

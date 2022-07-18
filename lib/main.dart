@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:short_video_spider_client/config/constants.dart';
 import 'package:short_video_spider_client/pages/home/home_page.dart';
 import 'package:short_video_spider_client/utils/file_util.dart';
 import 'package:short_video_spider_client/utils/keyboard_util.dart';
-import 'package:short_video_spider_client/utils/screen_util.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
 
 var dio = Dio();
@@ -23,9 +20,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      ///所有的路由文件
-      //getPages: RoutesPage.pages,
-      ///不展示右上角的debug标记
       debugShowCheckedModeBanner: false,
       builder: (context, child) => Scaffold(
         // 全局点击隐藏软键盘
@@ -36,12 +30,8 @@ class MyApp extends StatelessWidget {
           child: child,
         ),
       ),
-
-      ///国际化支持-备用语言
       home: const HomePage(),
-      //initialBinding: SplashBinding(),
     );
-    //});
   }
 }
 
@@ -49,26 +39,19 @@ class MyApp extends StatelessWidget {
 ///存储和请求初始化
 class Injection {
   static Future<void> init() async {
-    // shared_preferences
-    await SharedPreferences.getInstance();
-    if (await SpUtil.getBaseUrl() == null) {
-      SpUtil.updateBaseUrl("http://192.168.1.103");
+    String? baseUrl = await SpUtil.getBaseUrl();
+    if (baseUrl == null) {
+      SpUtil.updateBaseUrl(Constants.BASE_URL);
+    } else {
+      Constants.BASE_URL = baseUrl;
     }
-    if (await SpUtil.getCachePath() == null) {
-      SpUtil.updateCachePath(await FileUtils.getFileDirectory());
+    String? cachePath = await SpUtil.getCachePath();
+    if (cachePath == null) {
+      String dir = await FileUtils.getFileDirectory();
+      SpUtil.updateCachePath(dir);
+      Constants.CACHE_PATH = dir;
+    } else {
+      Constants.CACHE_PATH = cachePath;
     }
-    //Get.lazyPut(() =>RequestRepository());
   }
 }
-
-// void _incrementCounter() async {
-//   dio.options = BaseOptions(headers: {
-//     "user-agent":
-//     "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
-//   });
-//
-//   await dio.download(
-//       "https://aweme.snssdk.com/aweme/v1/play/?video_id=v0200fg10000cb6l3ojc77u09nmstov0&ratio=720p&line=0",
-//       "./77.mp4", onReceiveProgress: (int count, int total) {
-//     print("$count,$total");
-//   });
