@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
 import 'package:short_video_spider_client/utils/short_video_util.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
@@ -153,6 +154,18 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
+                    if (Platform.isAndroid || Platform.isIOS) {
+                      var status = await Permission.storage.status;
+                      if (status.isDenied) {
+                        Map<Permission, PermissionStatus> statuses = await [
+                          Permission.storage,
+                        ].request();
+                        PermissionStatus status = statuses[Permission.storage]!;
+                        if (status.isDenied) {
+                          showLog("存储权限被拒绝，请授予该权限");
+                        }
+                      }
+                    }
                     String text = _shareUrlTextController.text;
                     if (Constants.BASE_URL.isEmpty) {
                       showLog("baseUrl不能为空，请先在设置里面去配置");

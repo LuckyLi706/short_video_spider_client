@@ -45,6 +45,8 @@ dependencies:
   fluttertoast: ^8.0.9
   file_picker: ^4.2.4
   crypto: ^2.0.6   #md5加密
+  image_gallery_saver: ^1.7.1  # 保存到照片里面
+  permission_handler: ^10.0.0 # 权限申请
 
 
 dev_dependencies:

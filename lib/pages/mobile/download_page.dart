@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:short_video_spider_client/config/constants.dart';
 import 'package:short_video_spider_client/utils/widget_util.dart';
 
@@ -136,6 +137,8 @@ Widget _getBodyWidget() {
             }).catchError((e) {
               showLog("出现异常：${e.toString()}");
             });
+            final result = await ImageGallerySaver.saveFile(filePath);
+            print(result);
           }
         },
         child: const Text("开始下载")),
