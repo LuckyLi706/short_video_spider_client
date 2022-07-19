@@ -1,16 +1,45 @@
-# short_video_spider_client
+# 短视频下载器客户端
 
-spider short video
+目前只支持抖音视频的下载，需要配合服务端一起使用，可以下载单个视频，也支持下载用户下的多个视频。[服务端地址]((https://github.com/LuckyLi706/ShortVideoSpider))，服务器使用Flask去开发的，然后提供api接口。支持Android、Windows、Macos、Linux、IOS
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## 编译环境
+   + Flutter版本：3.0.1
+   + Dart版本：2.17.1
 
-A few resources to get you started if this is your first Flutter project:
+## 功能
+   + 设置功能
+    右上角的设置，可以提供url和存储路径的配置。
+   + 单个和多个选择框
+     - 单个
+       下载单个视频，复制单个视频的分享地址到下面的地址栏中。
+     - 多个
+       可以下载多个视频，web进入用户的主页，然后复制到下面的地址栏中，移动端可以通过分享主页复制到下面的地址栏中，下面的max_cursor的输入框可以不管。
+   + 获取下载地址
+     点击该按钮去获取真实的视频地址。
+   + 下载视频
+     获取真实地址成功之后可以点击这个按钮去下载视频。
+   + 清除日志
+     清除日志信息。
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 截图
+   + Windows
+     ![](screenshots/windows.png)
+   + Android
+   <figure class="half">
+    <img src="screenshots/android_1.png",width=300>
+    <img src="screenshots/android_2.png",width=300>
+   </figure>
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+   + macOS
+
+     适配完成
+   + IOS
+    
+     正在适配
+   + Linux
+   
+     不打算适配
+
+## 免责声明
+本仓库只为学习研究，如涉及侵犯个人或者团体利益，请与我取得联系，我将主动删除一切相关资料，谢谢！

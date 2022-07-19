@@ -64,7 +64,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _getBodyWidget() {
-    if (ScreenUtils.width > ScreenUtils.height) {
+    if (!Platform.isAndroid && !Platform.isIOS) {
       return Row(children: [
         Expanded(
           child: WidgetUtils.getListView(
@@ -200,7 +200,7 @@ class HomePageState extends State<HomePage> {
                           imageList.add(single.coverImageUrl!);
                           showLog("获取视频地址成功");
                         } else {
-                          showLog("获取视频地址成功：${result.data.toString()}");
+                          showLog("获取视频地址失败：${result.data.toString()}");
                         }
                       });
                     } else if (currentShortVideoDownloadType ==
@@ -248,7 +248,7 @@ class HomePageState extends State<HomePage> {
                       showLog("请先获取视频地址");
                       return;
                     }
-                    if (ScreenUtils.height > ScreenUtils.width) {
+                    if (Platform.isAndroid || Platform.isIOS) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) {
                         return DownloadPage(
@@ -286,6 +286,7 @@ class HomePageState extends State<HomePage> {
               child: TextButton(
                   onPressed: () {
                     _logTextController.text = "";
+                    showLogText = "";
                   },
                   child: const Text("清除日志")))
         ]),

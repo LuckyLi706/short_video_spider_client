@@ -43,6 +43,15 @@ class DownloadPageState extends State<DownloadPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
+          leading: IconButton(
+              onPressed: () {
+                if (!isFinish) {
+                  ToastUtils.showToast("当前下载未完成,请等待下载完成");
+                  return;
+                }
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.arrow_back)),
         ),
         body: _getBodyWidget(),
       ),

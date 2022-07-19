@@ -4,6 +4,6 @@ class Constants {
 
   static const String APP_NAME = "短视频下载器";
 
-  static String BASE_URL = "http://192.168.30.56:8080";
+  static String BASE_URL = "http://81.68.122.109:8080";
   static String CACHE_PATH = "";
 }
