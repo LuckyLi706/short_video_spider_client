@@ -32,8 +32,7 @@
    </figure>
 
    + macOS
-     ![](screenshots/macOS.png)
-     
+     ![](screenshots/macos.png)
    + IOS
 
   <figure class="half">
