@@ -1,6 +1,6 @@
 # 短视频下载器客户端
 
-目前只支持抖音视频的下载，需要配合服务端一起使用，可以下载单个视频，也支持下载用户下的多个视频。[服务端地址]((https://github.com/LuckyLi706/ShortVideoSpider))，服务器使用Flask去开发的，然后提供api接口。支持Android、Windows、Macos、Linux、IOS
+目前只支持抖音视频的下载，需要配合服务端一起使用，可以下载单个视频，也支持下载用户下的多个视频。[服务端地址]((https://github.com/LuckyLi706/ShortVideoSpider))，服务器使用Flask去开发的，然后提供api接口。支持Android、Windows、Macos、IOS
 
 
 ## 编译环境
@@ -32,14 +32,18 @@
    </figure>
 
    + macOS
-
-     适配完成
+     ![](screenshots/macOS.png)
+     
    + IOS
-    
-     正在适配
+
+  <figure class="half">
+    <img src="screenshots/ios_1.png",width=300>
+    <img src="screenshots/ios_2.png",width=300>
+  </figure>
+
    + Linux
    
-     不打算适配
+     应该没啥人使用Linux吧，哈哈哈，所以没适配。
 
 ## 免责声明
 本仓库只为学习研究，如涉及侵犯个人或者团体利益，请与我取得联系，我将主动删除一切相关资料，谢谢！
