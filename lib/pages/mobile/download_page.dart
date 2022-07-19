@@ -136,6 +136,7 @@ Widget _getBodyWidget() {
             });
             await dio.download(urlDownloadList[i], filePath,
                 onReceiveProgress: (int count, int total) {
+              isFinish = false;
               showLog(
                   "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
                   isAppend: false);
@@ -144,6 +145,7 @@ Widget _getBodyWidget() {
                 showLog("所有视频下载完成", isAppend: false);
               }
             }).catchError((e) {
+              isFinish = true;
               showLog("出现异常：${e.toString()}");
             });
             final result = await ImageGallerySaver.saveFile(filePath);

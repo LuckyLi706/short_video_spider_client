@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:short_video_spider_client/config/constants.dart';
@@ -44,6 +46,11 @@ class Injection {
       SpUtil.updateBaseUrl(Constants.BASE_URL);
     } else {
       Constants.BASE_URL = baseUrl;
+    }
+    if (Platform.isIOS) {
+      String dir = await FileUtils.getFileDirectory();
+      Constants.CACHE_PATH = dir;
+      return;
     }
     String? cachePath = await SpUtil.getCachePath();
     if (cachePath == null) {
