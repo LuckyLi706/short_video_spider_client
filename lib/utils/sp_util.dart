@@ -27,4 +27,16 @@ class SpUtil {
     String? cachePath = prefs.getString(Constants.SP_KEY_CACHE_PATH);
     return cachePath;
   }
+
+  static updateAppVersion(String appVersion) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove(Constants.SP_KEY_APP_VERSION);
+    prefs.setString(Constants.SP_KEY_APP_VERSION, appVersion);
+  }
+
+  static Future<String?> getAppVersion() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachePath = prefs.getString(Constants.SP_KEY_APP_VERSION);
+    return cachePath;
+  }
 }

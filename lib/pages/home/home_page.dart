@@ -1,15 +1,18 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
 import 'package:short_video_spider_client/utils/short_video_util.dart';
 import 'package:short_video_spider_client/utils/sp_util.dart';
 import 'package:short_video_spider_client/utils/widget_util.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/constants.dart';
 import '../../model/douyin_list.dart';
@@ -57,7 +60,12 @@ class HomePageState extends State<HomePage> {
                 onPressed: () {
                   _showSettingDialog(context);
                 },
-                icon: const Icon(Icons.settings))
+                icon: const Icon(Icons.settings)),
+            IconButton(
+                onPressed: () {
+                  showInfoDialog();
+                },
+                icon: const Icon(Icons.info_outline_rounded))
           ],
         ),
         body: _getBodyWidget());
@@ -99,6 +107,23 @@ class HomePageState extends State<HomePage> {
       TextEditingController(text: "0");
   final TextEditingController _shareUrlTextController = TextEditingController();
 
+  String globalUrl = ""; //全局url，为了验证当前url是否改变
+
+  void mobileRequestPerm() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      var status = await Permission.storage.status;
+      if (status.isDenied) {
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.storage,
+        ].request();
+        PermissionStatus status = statuses[Permission.storage]!;
+        if (status.isDenied) {
+          showLog("存储权限被拒绝，请授予该权限");
+        }
+      }
+    }
+  }
+
   Widget _getBehaviorWidget() {
     return Column(
       //mainAxisSize: MainAxisSize.min,
@@ -129,6 +154,11 @@ class HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(5.0),
                 borderSide: const BorderSide()),
           ),
+          onChanged: (value) {
+            setState(() {
+              _maxCursorTextController.text = "0";
+            });
+          },
         ),
         const SizedBox(
           height: 20,
@@ -154,38 +184,29 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
-                    if (Platform.isAndroid || Platform.isIOS) {
-                      var status = await Permission.storage.status;
-                      if (status.isDenied) {
-                        Map<Permission, PermissionStatus> statuses = await [
-                          Permission.storage,
-                        ].request();
-                        PermissionStatus status = statuses[Permission.storage]!;
-                        if (status.isDenied) {
-                          showLog("存储权限被拒绝，请授予该权限");
-                        }
-                      }
-                    }
-                    String text = _shareUrlTextController.text;
+                    mobileRequestPerm(); //移动端去请求权限
+
+                    String shareUrlText = _shareUrlTextController.text;
                     if (Constants.BASE_URL.isEmpty) {
-                      showLog("baseUrl不能为空，请先在设置里面去配置");
+                      showLog("BASE_URL不能为空，请先在设置里面去配置");
                       return;
                     }
-                    if (_shareUrlTextController.text.isEmpty) {
-                      showLog("url不能为空");
+                    if (shareUrlText.isEmpty) {
+                      showLog("分享的地址不能为空");
                       return;
                     }
                     if (currentShortVideoDownloadType ==
                         shortVideoDownloadType[0]) {
                       //单个视频
-                      String url = ShortVideoUtil.getDouYinUrl(text);
-                      if (url.isEmpty) {
+                      String requestUrl =
+                          ShortVideoUtil.getRequestUrl(0, shareUrlText);
+                      globalUrl = shareUrlText;
+                      if (requestUrl.isEmpty) {
                         showLog("解析URL失败，请重新复制");
                         return;
                       }
-                      Response result = await dio
-                          .get("${Constants.BASE_URL}/douyin/single?url=$url")
-                          .catchError((e) {
+                      Response result =
+                          await dio.get(requestUrl).catchError((e) {
                         showLog("出现异常：${e.toString()}");
                       });
                       setState(() {
@@ -205,31 +226,44 @@ class HomePageState extends State<HomePage> {
                       });
                     } else if (currentShortVideoDownloadType ==
                         shortVideoDownloadType[1]) {
-                      if (_maxCursorTextController.text.isEmpty) {
+                      String maxCursor = _maxCursorTextController.text;
+                      if (maxCursor.isEmpty) {
                         showLog("max_cursor不能为空");
                         return;
                       }
-                      String url = ShortVideoUtil.getDouYinUrl(text);
-                      Response result = await dio.get(
-                          "${Constants.BASE_URL}/douyin/list?url=$url&max_cursor=${_maxCursorTextController.text}");
+                      String requestUrl = ShortVideoUtil.getRequestUrl(
+                          1, shareUrlText,
+                          maxCursor: maxCursor);
+                      if (requestUrl.isEmpty) {
+                        showLog("解析URL失败，请重新复制");
+                        return;
+                      }
+                      Response result = await dio.get(requestUrl);
                       setState(() {
-                        imageList.clear();
-                        urlDownloadList.clear();
-                        md5UrlDownloadList.clear();
+                        if (globalUrl != shareUrlText) {
+                          imageList.clear();
+                          urlDownloadList.clear();
+                          md5UrlDownloadList.clear();
+                        }
+                        globalUrl = shareUrlText;
                         if (result.data.toString().contains("200")) {
                           DouYinList list = DouYinList.fromJson(result.data);
-                          showLog("有更多数据");
-                          _maxCursorTextController.text =
-                              list.maxCursor.toString();
-                          for (int i = 0;
-                              i < list.coverImageUrlList.length;
-                              i++) {
-                            md5UrlDownloadList
-                                .add(_getMd5(list.videoUrlList[i]));
-                            urlDownloadList.add(list.videoUrlList[i]);
-                            imageList.add(list.coverImageUrlList[i]);
+                          if (list.hasMore!) {
+                            showLog("有更多数据,可以继续添加列表");
+                            _maxCursorTextController.text =
+                                list.maxCursor.toString();
+                            for (int i = 0;
+                                i < list.coverImageUrlList.length;
+                                i++) {
+                              md5UrlDownloadList
+                                  .add(_getMd5(list.videoUrlList[i]));
+                              urlDownloadList.add(list.videoUrlList[i]);
+                              imageList.add(list.coverImageUrlList[i]);
+                            }
+                            showLog("获取视频地址成功,目前${urlDownloadList.length}个视频");
+                          } else {
+                            showLog("已经没有数据啦~");
                           }
-                          showLog("获取视频地址成功,一共${urlDownloadList.length}个视频");
                         } else {
                           showLog("获取视频地址失败：${result.data.toString()}");
                         }
@@ -276,6 +310,9 @@ class HomePageState extends State<HomePage> {
                         showLog(
                             "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
                             isAppend: false);
+                        if (i == urlDownloadList.length - 1 && count == total) {
+                          showLog("下载完成");
+                        }
                       }).catchError((e) {
                         showLog("出现异常：${e.toString()}");
                       });
@@ -461,6 +498,114 @@ class HomePageState extends State<HomePage> {
                                   ),
                                 )),
                               ],
+                            ),
+                          ],
+                        ))),
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _launchUrl(Uri uri) async {
+    if (!await launchUrl(uri)) {
+      showLog("链接无法跳转");
+    }
+  }
+
+  showInfoDialog() {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return UnconstrainedBox(
+            //在Dialog的外层添加一层UnconstrainedBox
+            //constrainedAxis: Axis.vertical,
+            child: SizedBox(
+              //再用SizeBox指定宽度new Dialog(
+              child: AlertDialog(
+                scrollable: true,
+                actions: [
+                  TextButton(
+                    child: const Text('确定'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+                title: const Text("关于", style: TextStyle(fontSize: 20)),
+                content: Center(
+                    child: SizedBox(
+                        width: 0.5 * ScreenUtils.width,
+                        height: 0.3 * ScreenUtils.height,
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("当前版本：${Constants.APP_VERSION}"),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      const TextSpan(
+                                        text: '客户端地址： ',
+                                        style: TextStyle(color: Colors.black),
+                                      ),
+                                      TextSpan(
+                                        text:
+                                            'https://github.com/LuckyLi706/short_video_spider_client',
+                                        style:
+                                            const TextStyle(color: Colors.blue),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            _launchUrl(Uri.parse(
+                                                "https://github.com/LuckyLi706/short_video_spider_client"));
+                                          },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      const TextSpan(
+                                        text: '服务端地址： ',
+                                        style: TextStyle(color: Colors.black),
+                                      ),
+                                      TextSpan(
+                                        text:
+                                            'https://github.com/LuckyLi706/ShortVideoSpider',
+                                        style:
+                                            const TextStyle(color: Colors.blue),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            _launchUrl(Uri.parse(
+                                                "https://github.com/LuckyLi706/ShortVideoSpider"));
+                                          },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 10,
                             ),
                           ],
                         ))),

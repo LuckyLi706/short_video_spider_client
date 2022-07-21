@@ -60,5 +60,15 @@ class Injection {
     } else {
       Constants.CACHE_PATH = cachePath;
     }
+
+    String? appVersion = await SpUtil.getAppVersion();
+    if (appVersion == null) {
+      SpUtil.updateAppVersion(Constants.APP_VERSION);
+    } else {
+      if (Constants.APP_VERSION != appVersion) {
+        //可以做一些更新配置的操作
+        SpUtil.updateAppVersion(Constants.APP_VERSION);
+      }
+    }
   }
 }

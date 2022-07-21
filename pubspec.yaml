@@ -47,6 +47,7 @@ dependencies:
   crypto: ^2.0.6   #md5加密
   image_gallery_saver: ^1.7.1  # 保存到照片里面
   permission_handler: ^10.0.0 # 权限申请
+  url_launcher: ^6.1.5
 
 
 dev_dependencies:
