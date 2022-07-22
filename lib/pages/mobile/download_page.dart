@@ -1,12 +1,13 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:short_video_spider_client/config/constants.dart';
+import 'package:short_video_spider_client/utils/dio_util.dart';
 import 'package:short_video_spider_client/utils/widget_util.dart';
 
 import '../../utils/toast_util.dart';
+import '../widget/dialog/dialog.dart';
 
 var imageList = [];
 var urlDownloadList = [];
@@ -53,7 +54,7 @@ class DownloadPageState extends State<DownloadPage> {
               },
               icon: const Icon(Icons.arrow_back)),
         ),
-        body: _getBodyWidget(),
+        body: _getBodyWidget(context),
       ),
     );
   }
@@ -103,7 +104,7 @@ void showLog(String msg, {bool isAppend = true}) {
   });
 }
 
-Widget _getBodyWidget() {
+Widget _getBodyWidget(BuildContext context) {
   return Column(children: [
     Expanded(
         flex: 2,
@@ -116,7 +117,10 @@ Widget _getBodyWidget() {
         )),
     TextButton(
         onPressed: () async {
-          var dio = Dio();
+          if (!isFinish) {
+            showDownloadDialog(context);
+            return;
+          }
           isFinish = false;
           for (int i = 0; i < urlDownloadList.length; i++) {
             String end =
@@ -130,11 +134,7 @@ Widget _getBodyWidget() {
               }
               continue;
             }
-            dio.options = BaseOptions(headers: {
-              "user-agent":
-                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-            });
-            await dio.download(urlDownloadList[i], filePath,
+            await DioUtils.getDio().download(urlDownloadList[i], filePath,
                 onReceiveProgress: (int count, int total) {
               isFinish = false;
               showLog(
