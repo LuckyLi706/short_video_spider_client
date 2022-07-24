@@ -1,23 +1,20 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
+import 'package:short_video_spider_client/utils/dio_util.dart';
 import 'package:short_video_spider_client/utils/short_video_util.dart';
-import 'package:short_video_spider_client/utils/sp_util.dart';
 import 'package:short_video_spider_client/utils/widget_util.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/constants.dart';
 import '../../model/douyin_list.dart';
 import '../../model/douyin_single.dart';
 import '../../utils/screen_util.dart';
+import '../widget/dialog/dialog.dart';
 
 var imageList = [];
 var urlDownloadList = [];
@@ -40,8 +37,6 @@ _getWidthHeight(BuildContext context) {
 }
 
 class HomePageState extends State<HomePage> {
-  var dio = Dio();
-
   @override
   void initState() {
     super.initState();
@@ -57,15 +52,19 @@ class HomePageState extends State<HomePage> {
           title: const Text(Constants.APP_NAME),
           actions: [
             IconButton(
-                onPressed: () {
-                  _showSettingDialog(context);
-                },
-                icon: const Icon(Icons.settings)),
+              onPressed: () {
+                showSettingDialog(context);
+              },
+              icon: const Icon(Icons.settings),
+              tooltip: "设置",
+            ),
             IconButton(
-                onPressed: () {
-                  showInfoDialog();
-                },
-                icon: const Icon(Icons.info_outline_rounded))
+              onPressed: () {
+                showInfoDialog(context);
+              },
+              icon: const Icon(Icons.info_outline_rounded),
+              tooltip: "关于",
+            )
           ],
         ),
         body: _getBodyWidget());
@@ -205,9 +204,10 @@ class HomePageState extends State<HomePage> {
                         showLog("解析URL失败，请重新复制");
                         return;
                       }
-                      Response result =
-                          await dio.get(requestUrl).catchError((e) {
-                        showLog("出现异常：${e.toString()}");
+                      Response result = await DioUtils.getDio()
+                          .get(requestUrl)
+                          .catchError((e) {
+                        showLog("请求异常：$e");
                       });
                       setState(() {
                         imageList.clear();
@@ -238,7 +238,11 @@ class HomePageState extends State<HomePage> {
                         showLog("解析URL失败，请重新复制");
                         return;
                       }
-                      Response result = await dio.get(requestUrl);
+                      Response result = await DioUtils.getDio()
+                          .get(requestUrl)
+                          .catchError((e) {
+                        showLog("请求异常：$e");
+                      });
                       setState(() {
                         if (globalUrl != shareUrlText) {
                           imageList.clear();
@@ -275,6 +279,10 @@ class HomePageState extends State<HomePage> {
           Expanded(
               child: TextButton(
                   onPressed: () async {
+                    if (!isFinish) {
+                      showDownloadDialog(context);
+                      return;
+                    }
                     if (Constants.CACHE_PATH.isEmpty) {
                       showLog("缓存地址为空，请先去设置进行配置");
                       return;
@@ -291,6 +299,7 @@ class HomePageState extends State<HomePage> {
                       }));
                       return;
                     }
+                    isFinish = false;
                     for (int i = 0; i < urlDownloadList.length; i++) {
                       String end = urlDownloadList[i].toString().endsWith("mp3")
                           ? "mp3"
@@ -300,19 +309,20 @@ class HomePageState extends State<HomePage> {
                       if (File(filePath).existsSync()) {
                         showLog(
                             "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
+                        if (i == urlDownloadList.length - 1) {
+                          isFinish = true;
+                        }
                         continue;
                       }
-                      dio.options = BaseOptions(headers: {
-                        "user-agent":
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-                      });
-                      await dio.download(urlDownloadList[i], filePath,
-                          onReceiveProgress: (int count, int total) {
+                      await DioUtils.getDio()
+                          .download(urlDownloadList[i], filePath,
+                              onReceiveProgress: (int count, int total) {
                         showLog(
                             "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
                             isAppend: false);
                         if (i == urlDownloadList.length - 1 && count == total) {
-                          showLog("下载完成");
+                          showLog("所有视频下载完成");
+                          isFinish = true;
                         }
                       }).catchError((e) {
                         showLog("出现异常：${e.toString()}");
@@ -334,6 +344,8 @@ class HomePageState extends State<HomePage> {
       ],
     );
   }
+
+  bool isFinish = true;
 
   String _getMd5(String origin) {
     // 待加密字符串
@@ -388,231 +400,5 @@ class HomePageState extends State<HomePage> {
     }
     currentShortVideoDownloadType = shortVideoDownloadType[0];
     return shortVideoDownloadDdmi;
-  }
-
-  TextEditingController cacheController = TextEditingController();
-  TextEditingController urlController = TextEditingController();
-
-  void _showSettingDialog(BuildContext context) async {
-    cacheController.text = await SpUtil.getCachePath() ?? '';
-    urlController.text = await SpUtil.getBaseUrl() ?? '';
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return UnconstrainedBox(
-            //在Dialog的外层添加一层UnconstrainedBox
-            //constrainedAxis: Axis.vertical,
-            child: SizedBox(
-              //再用SizeBox指定宽度new Dialog(
-              child: AlertDialog(
-                scrollable: true,
-                actions: [
-                  TextButton(
-                    child: const Text('取消'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  TextButton(
-                    child: const Text('确定'),
-                    onPressed: () {
-                      if (urlController.text.isNotEmpty) {
-                        SpUtil.updateBaseUrl(urlController.text);
-                        Constants.BASE_URL = urlController.text;
-                      }
-                      if (cacheController.text.isNotEmpty) {
-                        SpUtil.updateCachePath(cacheController.text);
-                        Constants.CACHE_PATH = cacheController.text;
-                      }
-                      Navigator.of(context).pop();
-                    },
-                  )
-                ],
-                title: const Text("设置", style: TextStyle(fontSize: 20)),
-                content: Center(
-                    child: SizedBox(
-                        width: 0.5 * ScreenUtils.width,
-                        height: 0.4 * ScreenUtils.height,
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                TextButton(
-                                    onPressed: () async {
-                                      String? selectedDirectory =
-                                          await FilePicker.platform
-                                              .getDirectoryPath();
-                                      if (selectedDirectory == null) {
-                                      } else {
-                                        cacheController.text =
-                                            selectedDirectory;
-                                      }
-                                    },
-                                    child: const Text("手动选择存储目录")),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                    child: TextField(
-                                  controller: cacheController,
-                                  maxLines: 1,
-                                  enableInteractiveSelection: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'CACHE_PATH',
-                                    border: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: Colors.pink,
-                                      ),
-                                    ),
-                                  ),
-                                )),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                    child: TextField(
-                                  controller: urlController,
-                                  maxLines: 1,
-                                  enableInteractiveSelection: true,
-                                  decoration: const InputDecoration(
-                                    enabled: true,
-                                    labelText: 'BASE_URL',
-                                    // 长按输入的文本, 设置是否显示剪切，复制，粘贴按钮, 默认是显示的
-                                    border: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: Colors.pink,
-                                      ),
-                                    ),
-                                  ),
-                                )),
-                              ],
-                            ),
-                          ],
-                        ))),
-              ),
-            ),
-          );
-        });
-  }
-
-  Future<void> _launchUrl(Uri uri) async {
-    if (!await launchUrl(uri)) {
-      showLog("链接无法跳转");
-    }
-  }
-
-  showInfoDialog() {
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return UnconstrainedBox(
-            //在Dialog的外层添加一层UnconstrainedBox
-            //constrainedAxis: Axis.vertical,
-            child: SizedBox(
-              //再用SizeBox指定宽度new Dialog(
-              child: AlertDialog(
-                scrollable: true,
-                actions: [
-                  TextButton(
-                    child: const Text('确定'),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  )
-                ],
-                title: const Text("关于", style: TextStyle(fontSize: 20)),
-                content: Center(
-                    child: SizedBox(
-                        width: 0.5 * ScreenUtils.width,
-                        height: 0.3 * ScreenUtils.height,
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text("当前版本：${Constants.APP_VERSION}"),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      const TextSpan(
-                                        text: '客户端地址： ',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                            'https://github.com/LuckyLi706/short_video_spider_client',
-                                        style:
-                                            const TextStyle(color: Colors.blue),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            _launchUrl(Uri.parse(
-                                                "https://github.com/LuckyLi706/short_video_spider_client"));
-                                          },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      const TextSpan(
-                                        text: '服务端地址： ',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                            'https://github.com/LuckyLi706/ShortVideoSpider',
-                                        style:
-                                            const TextStyle(color: Colors.blue),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            _launchUrl(Uri.parse(
-                                                "https://github.com/LuckyLi706/ShortVideoSpider"));
-                                          },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                          ],
-                        ))),
-              ),
-            ),
-          );
-        });
   }
 }
