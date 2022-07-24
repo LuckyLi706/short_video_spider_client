@@ -21,7 +21,7 @@ import '../../utils/screen_util.dart';
 
 var imageList = [];
 var urlDownloadList = [];
-var md5UrlDownloadList = [];
+var videoDescList = [];
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -76,7 +76,7 @@ class HomePageState extends State<HomePage> {
       return Row(children: [
         Expanded(
           child: WidgetUtils.getListView(
-              imageList, md5UrlDownloadList, urlDownloadList),
+              imageList, videoDescList, urlDownloadList),
         ),
         Expanded(
             child: Padding(
@@ -212,11 +212,11 @@ class HomePageState extends State<HomePage> {
                       setState(() {
                         imageList.clear();
                         urlDownloadList.clear();
-                        md5UrlDownloadList.clear();
+                        videoDescList.clear();
                         if (result.data.toString().contains("200")) {
                           DouYinSingle single =
                               DouYinSingle.fromJson(result.data);
-                          md5UrlDownloadList.add(_getMd5(single.videoUrl!));
+                          videoDescList.add(single.videoDesc);
                           urlDownloadList.add(single.videoUrl!);
                           imageList.add(single.coverImageUrl!);
                           showLog("获取视频地址成功");
@@ -243,26 +243,27 @@ class HomePageState extends State<HomePage> {
                         if (globalUrl != shareUrlText) {
                           imageList.clear();
                           urlDownloadList.clear();
-                          md5UrlDownloadList.clear();
+                          videoDescList.clear();
                         }
                         globalUrl = shareUrlText;
                         if (result.data.toString().contains("200")) {
                           DouYinList list = DouYinList.fromJson(result.data);
-                          if (list.hasMore!) {
-                            showLog("有更多数据,可以继续添加列表");
+                          if (list.videoUrlList.isNotEmpty) {
                             _maxCursorTextController.text =
                                 list.maxCursor.toString();
                             for (int i = 0;
                                 i < list.coverImageUrlList.length;
                                 i++) {
-                              md5UrlDownloadList
-                                  .add(_getMd5(list.videoUrlList[i]));
+                              videoDescList.add(list.videoDescList[i]);
                               urlDownloadList.add(list.videoUrlList[i]);
                               imageList.add(list.coverImageUrlList[i]);
                             }
                             showLog("获取视频地址成功,目前${urlDownloadList.length}个视频");
+                          }
+                          if (list.hasMore!) {
+                            showLog("有更多数据,可以继续添加列表");
                           } else {
-                            showLog("已经没有数据啦~");
+                            showLog("已经没有更多数据啦~");
                           }
                         } else {
                           showLog("获取视频地址失败：${result.data.toString()}");
@@ -286,7 +287,7 @@ class HomePageState extends State<HomePage> {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) {
                         return DownloadPage(
-                            imageList, urlDownloadList, md5UrlDownloadList);
+                            imageList, urlDownloadList, videoDescList);
                       }));
                       return;
                     }
@@ -295,7 +296,7 @@ class HomePageState extends State<HomePage> {
                           ? "mp3"
                           : "mp4";
                       String filePath =
-                          "${Constants.CACHE_PATH + Platform.pathSeparator + md5UrlDownloadList[i]}.$end";
+                          "${Constants.CACHE_PATH + Platform.pathSeparator + videoDescList[i]}.$end";
                       if (File(filePath).existsSync()) {
                         showLog(
                             "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");

@@ -11,10 +11,12 @@ class DouYinList {
     this.hasMore,
     this.maxCursor,
     this.videoUrlList = const [],
+    this.videoDescList = const [],
   });
 
   int? code;
   List<String> coverImageUrlList = [];
+  List<String> videoDescList = [];
   bool? hasMore;
   int? maxCursor;
   List<String> videoUrlList = [];
@@ -23,6 +25,7 @@ class DouYinList {
         code: json["code"],
         coverImageUrlList:
             List<String>.from(json["cover_image_url_list"].map((x) => x)),
+        videoDescList: List<String>.from(json["video_desc_list"].map((x) => x)),
         hasMore: json["has_more"],
         maxCursor: json["max_cursor"],
         videoUrlList: List<String>.from(json["video_url_list"].map((x) => x)),
@@ -35,5 +38,6 @@ class DouYinList {
         "has_more": hasMore,
         "max_cursor": maxCursor,
         "video_url_list": List<dynamic>.from(videoUrlList.map((x) => x)),
+        "video_desc_list": List<dynamic>.from(videoDescList.map((x) => x)),
       };
 }

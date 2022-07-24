@@ -8,7 +8,7 @@ import '../pages/widget/copy_text.dart';
 
 class WidgetUtils {
   static Widget getListView(
-      var imageList, var md5UrlDownloadList, var urlDownloadList) {
+      var imageList, var videoDescList, var urlDownloadList) {
     return ListView.builder(
       itemCount: imageList.length,
       //列表项构造器
@@ -33,7 +33,7 @@ class WidgetUtils {
               Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: CopyText(
-                    "存储位置：${Constants.CACHE_PATH}${Platform.pathSeparator}${md5UrlDownloadList[index]}.${urlDownloadList[index].toString().endsWith("mp3") ? "mp3" : "mp4"}"),
+                    "存储位置：${Constants.CACHE_PATH}${Platform.pathSeparator}${videoDescList[index]}.${urlDownloadList[index].toString().endsWith("mp3") ? "mp3" : "mp4"}"),
               ),
               Padding(
                   padding: const EdgeInsets.only(left: 10),

@@ -10,15 +10,15 @@ import '../../utils/toast_util.dart';
 
 var imageList = [];
 var urlDownloadList = [];
-var md5UrlDownloadList = [];
+var videoDescList = [];
 
 class DownloadPage extends StatefulWidget {
-  DownloadPage(var imageListD, var urlDownloadListD, var md5UrlDownloadListD,
+  DownloadPage(var imageListD, var urlDownloadListD, var videoDescListD,
       {Key? key})
       : super(key: key) {
     imageList = imageListD;
     urlDownloadList = urlDownloadListD;
-    md5UrlDownloadList = md5UrlDownloadListD;
+    videoDescList = videoDescListD;
   }
 
   @override
@@ -111,7 +111,7 @@ Widget _getBodyWidget() {
           padding: const EdgeInsets.all(10),
           child: Container(
             child: WidgetUtils.getListView(
-                imageList, md5UrlDownloadList, urlDownloadList),
+                imageList, videoDescList, urlDownloadList),
           ),
         )),
     TextButton(
@@ -122,7 +122,7 @@ Widget _getBodyWidget() {
             String end =
                 urlDownloadList[i].toString().endsWith("mp3") ? "mp3" : "mp4";
             String filePath =
-                "${Constants.CACHE_PATH + Platform.pathSeparator + md5UrlDownloadList[i]}.$end";
+                "${Constants.CACHE_PATH + Platform.pathSeparator + videoDescList[i]}.$end";
             if (File(filePath).existsSync()) {
               showLog("一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
               if (i == urlDownloadList.length - 1) {
