@@ -7,5 +7,5 @@ class Constants {
 
   static String BASE_URL = "http://81.68.122.109:8080";
   static String CACHE_PATH = "";
-  static String APP_VERSION = "1.1.0";
+  static String APP_VERSION = "1.1.1";
 }

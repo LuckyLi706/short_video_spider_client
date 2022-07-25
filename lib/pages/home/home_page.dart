@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
 import 'package:short_video_spider_client/utils/dio_util.dart';
+import 'package:short_video_spider_client/utils/file_util.dart';
 import 'package:short_video_spider_client/utils/short_video_util.dart';
 import 'package:short_video_spider_client/utils/widget_util.dart';
 
@@ -49,7 +50,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: const Text(Constants.APP_NAME),
+          title: Text("${Constants.APP_NAME} v${Constants.APP_VERSION}"),
           actions: [
             IconButton(
               onPressed: () {
@@ -216,7 +217,8 @@ class HomePageState extends State<HomePage> {
                         if (result.data.toString().contains("200")) {
                           DouYinSingle single =
                               DouYinSingle.fromJson(result.data);
-                          videoDescList.add(single.videoDesc);
+                          videoDescList.add(
+                              FileUtils.replaceFileName(single.videoDesc!));
                           urlDownloadList.add(single.videoUrl!);
                           imageList.add(single.coverImageUrl!);
                           showLog("获取视频地址成功");
@@ -258,7 +260,8 @@ class HomePageState extends State<HomePage> {
                             for (int i = 0;
                                 i < list.coverImageUrlList.length;
                                 i++) {
-                              videoDescList.add(list.videoDescList[i]);
+                              videoDescList.add(FileUtils.replaceFileName(
+                                  list.videoDescList[i]));
                               urlDownloadList.add(list.videoUrlList[i]);
                               imageList.add(list.coverImageUrlList[i]);
                             }
@@ -299,8 +302,8 @@ class HomePageState extends State<HomePage> {
                       }));
                       return;
                     }
-                    isFinish = false;
                     for (int i = 0; i < urlDownloadList.length; i++) {
+                      isFinish = false;
                       String end = urlDownloadList[i].toString().endsWith("mp3")
                           ? "mp3"
                           : "mp4";
@@ -326,6 +329,7 @@ class HomePageState extends State<HomePage> {
                         }
                       }).catchError((e) {
                         showLog("出现异常：${e.toString()}");
+                        isFinish = true;
                       });
                     }
                   },
