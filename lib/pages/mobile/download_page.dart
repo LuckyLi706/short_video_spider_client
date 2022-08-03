@@ -125,8 +125,16 @@ Widget _getBodyWidget(BuildContext context) {
           for (int i = 0; i < urlDownloadList.length; i++) {
             String end =
                 urlDownloadList[i].toString().endsWith("mp3") ? "mp3" : "mp4";
-            String filePath =
-                "${Constants.CACHE_PATH + Platform.pathSeparator + videoDescList[i]}.$end";
+            String filePath = Constants.CACHE_PATH +
+                Platform.pathSeparator +
+                videoDescList[i];
+            //安卓文件路径有限制,大约127个字符
+            //参考：https://stackoverflow.com/questions/13204807/max-file-name-length-in-android
+            if (filePath.length > 120) {
+              filePath = "${filePath.substring(0, 120)}.$end";
+            } else {
+              filePath = "$filePath.$end";
+            }
             if (File(filePath).existsSync()) {
               showLog("一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
               if (i == urlDownloadList.length - 1) {
