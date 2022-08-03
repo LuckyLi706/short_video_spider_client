@@ -121,8 +121,8 @@ Widget _getBodyWidget(BuildContext context) {
             showDownloadDialog(context);
             return;
           }
-          isFinish = false;
           for (int i = 0; i < urlDownloadList.length; i++) {
+            isFinish = false;
             String end =
                 urlDownloadList[i].toString().endsWith("mp3") ? "mp3" : "mp4";
             String filePath = Constants.CACHE_PATH +
@@ -156,7 +156,8 @@ Widget _getBodyWidget(BuildContext context) {
               isFinish = true;
               showLog("出现异常：${e.toString()}");
             });
-            final result = await ImageGallerySaver.saveFile(filePath);
+            final result =
+                await ImageGallerySaver.saveFile(filePath); //保存到相册里面去
             print(result);
           }
         },

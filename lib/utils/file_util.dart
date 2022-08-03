@@ -16,4 +16,18 @@ class FileUtils {
       return dir.path;
     }
   }
+
+  static String replaceFileName(String text) {
+    return text
+        .replaceAll("\n", "")
+        .replaceAll("?", "")
+        .replaceAll(">", "")
+        .replaceAll(" ", "")
+        .replaceAll("\\", "")
+        .replaceAll("\\", "")
+        .replaceAll("*", "")
+        .replaceAll(":", "")
+        .replaceAll("<", "")
+        .replaceAll("|", "");
+  }
 }
