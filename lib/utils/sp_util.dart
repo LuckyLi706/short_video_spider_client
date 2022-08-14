@@ -16,6 +16,18 @@ class SpUtil {
     return baseUrl;
   }
 
+  static updateProxyUrl(String baseUrl) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove(Constants.SP_KEY_PROXY_URL);
+    prefs.setString(Constants.SP_KEY_PROXY_URL, baseUrl);
+  }
+
+  static Future<String?> getProxyUrl() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var baseUrl = prefs.getString(Constants.SP_KEY_PROXY_URL);
+    return baseUrl;
+  }
+
   static updateCachePath(String cachePath) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove(Constants.SP_KEY_CACHE_PATH);

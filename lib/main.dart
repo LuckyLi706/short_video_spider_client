@@ -12,6 +12,7 @@ var dio = Dio();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MyHttpOverrides();
   Injection.init();
   runApp(const MyApp());
 }
@@ -47,6 +48,14 @@ class Injection {
     } else {
       Constants.BASE_URL = baseUrl;
     }
+
+    String? proxyUrl = await SpUtil.getProxyUrl();
+    if (proxyUrl == null) {
+      SpUtil.updateProxyUrl(Constants.PROXY_URL);
+    } else {
+      Constants.PROXY_URL = proxyUrl;
+    }
+
     if (Platform.isIOS) {
       String dir = await FileUtils.getFileDirectory();
       Constants.CACHE_PATH = dir;
@@ -70,5 +79,13 @@ class Injection {
         SpUtil.updateAppVersion(Constants.APP_VERSION);
       }
     }
+  }
+}
+
+class MyHttpOverrides extends HttpOverrides{
+  @override
+  HttpClient createHttpClient(SecurityContext? context){
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
   }
 }

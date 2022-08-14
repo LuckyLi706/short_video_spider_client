@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -205,27 +203,63 @@ class HomePageState extends State<HomePage> {
                         showLog("解析URL失败，请重新复制");
                         return;
                       }
-                      Response result = await DioUtils.getDio()
-                          .get(requestUrl)
-                          .catchError((e) {
-                        showLog("请求异常：$e");
-                      });
-                      setState(() {
-                        imageList.clear();
-                        urlDownloadList.clear();
-                        videoDescList.clear();
-                        if (result.data.toString().contains("200")) {
-                          DouYinSingle single =
-                              DouYinSingle.fromJson(result.data);
-                          videoDescList.add(
-                              FileUtils.replaceFileName(single.videoDesc!));
-                          urlDownloadList.add(single.videoUrl!);
-                          imageList.add(single.coverImageUrl!);
-                          showLog("获取视频地址成功");
-                        } else {
-                          showLog("获取视频地址失败：${result.data.toString()}");
-                        }
-                      });
+                      if (requestUrl.contains("tiktok")) {
+                        String awemeId =
+                            requestUrl.split("video/")[1].split('?')[0];
+                        String tiktokBaseUrl =
+                            "https://api.tiktokv.com/aweme/v1/aweme/detail/?aweme_id=$awemeId";
+                        print(tiktokBaseUrl);
+                        Response response = await DioUtils.getDioProxy()
+                            .get(tiktokBaseUrl)
+                            .catchError((e) {
+                          showLog("请求异常：$e");
+                        });
+                        setState(() {
+                          imageList.clear();
+                          urlDownloadList.clear();
+                          videoDescList.clear();
+                          if (response.data['status_code'] == 0) {
+                            /**
+                                video_url = json_response["aweme_detail"]["video"]["play_addr"]["url_list"][0]
+                                origin_cover_imager_url = json_response['aweme_detail']['video']['dynamic_cover']['url_list'][0]
+                                video_desc = json_response['aweme_detail']['desc'].replace(' ', '')
+                             */
+                            videoDescList.add(FileUtils.replaceFileName(response
+                                .data['aweme_detail']['desc']
+                                .replaceAll(' ', '')));
+                            urlDownloadList.add(response.data["aweme_detail"]
+                                ["video"]["play_addr"]["url_list"][0]);
+                            imageList.add(response.data['aweme_detail']['video']
+                                ['dynamic_cover']['url_list'][0]);
+                            showLog("获取视频地址成功");
+                          } else {
+                            showLog("获取视频地址失败：${response.data['status_code']}");
+                          }
+                        });
+                      } else {
+                        Response result = await DioUtils.getDio()
+                            .get(requestUrl)
+                            .catchError((e) {
+                          showLog("请求异常：$e");
+                        });
+
+                        setState(() {
+                          imageList.clear();
+                          urlDownloadList.clear();
+                          videoDescList.clear();
+                          if (result.data.toString().contains("200")) {
+                            DouYinSingle single =
+                                DouYinSingle.fromJson(result.data);
+                            videoDescList.add(
+                                FileUtils.replaceFileName(single.videoDesc!));
+                            urlDownloadList.add(single.videoUrl!);
+                            imageList.add(single.coverImageUrl!);
+                            showLog("获取视频地址成功");
+                          } else {
+                            showLog("获取视频地址失败：${result.data.toString()}");
+                          }
+                        });
+                      }
                     } else if (currentShortVideoDownloadType ==
                         shortVideoDownloadType[1]) {
                       String maxCursor = _maxCursorTextController.text;
@@ -350,13 +384,6 @@ class HomePageState extends State<HomePage> {
   }
 
   bool isFinish = true;
-
-  String _getMd5(String origin) {
-    // 待加密字符串
-    var content = const Utf8Encoder().convert(origin);
-    var digest = md5.convert(content);
-    return digest.toString();
-  }
 
   String showLogText = "";
 

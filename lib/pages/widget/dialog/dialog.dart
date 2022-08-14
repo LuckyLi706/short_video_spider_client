@@ -133,10 +133,12 @@ showInfoDialog(BuildContext context) {
 
 TextEditingController cacheController = TextEditingController();
 TextEditingController urlController = TextEditingController();
+TextEditingController proxyController = TextEditingController();
 
 void showSettingDialog(BuildContext context) async {
   cacheController.text = await SpUtil.getCachePath() ?? '';
   urlController.text = await SpUtil.getBaseUrl() ?? '';
+  proxyController.text = await SpUtil.getProxyUrl() ?? '';
   showDialog(
       context: context,
       barrierDismissible: false,
@@ -165,6 +167,10 @@ void showSettingDialog(BuildContext context) async {
                     if (cacheController.text.isNotEmpty) {
                       SpUtil.updateCachePath(cacheController.text);
                       Constants.CACHE_PATH = cacheController.text;
+                    }
+                    if(proxyController.text.isNotEmpty){
+                      SpUtil.updateProxyUrl(proxyController.text);
+                      Constants.PROXY_URL = proxyController.text;
                     }
                     Navigator.of(context).pop();
                   },
@@ -230,6 +236,31 @@ void showSettingDialog(BuildContext context) async {
                                 decoration: const InputDecoration(
                                   enabled: true,
                                   labelText: 'BASE_URL',
+                                  // 长按输入的文本, 设置是否显示剪切，复制，粘贴按钮, 默认是显示的
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.pink,
+                                    ),
+                                  ),
+                                ),
+                              )),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                  child: TextField(
+                                controller: proxyController,
+                                maxLines: 1,
+                                enableInteractiveSelection: true,
+                                decoration: const InputDecoration(
+                                  enabled: true,
+                                  labelText: '代理服务器（ip:port）',
                                   // 长按输入的文本, 设置是否显示剪切，复制，粘贴按钮, 默认是显示的
                                   border: OutlineInputBorder(
                                     borderSide: BorderSide(
