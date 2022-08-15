@@ -28,6 +28,8 @@ class FileUtils {
         .replaceAll("*", "")
         .replaceAll(":", "")
         .replaceAll("<", "")
-        .replaceAll("|", "");
+        .replaceAll("|", "")
+        .replaceAll("，", "")
+        .replaceAll("\"", "");
   }
 }

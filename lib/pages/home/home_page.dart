@@ -193,6 +193,21 @@ class HomePageState extends State<HomePage> {
                       showLog("分享的地址不能为空");
                       return;
                     }
+
+                    //创建douyin和tiktok的目录
+                    String folderTiktok = Constants.CACHE_PATH +
+                        Platform.pathSeparator +
+                        ShortVideoUtil.TIK_TOK;
+                    String folderDouYin = Constants.CACHE_PATH +
+                        Platform.pathSeparator +
+                        ShortVideoUtil.DOU_YIN;
+                    if (!Directory(folderDouYin).existsSync()) {
+                      Directory(folderDouYin).create();
+                    }
+                    if (!Directory(folderTiktok).existsSync()) {
+                      Directory(folderTiktok).create();
+                    }
+
                     if (currentShortVideoDownloadType ==
                         shortVideoDownloadType[0]) {
                       //单个视频
@@ -224,9 +239,11 @@ class HomePageState extends State<HomePage> {
                                 origin_cover_imager_url = json_response['aweme_detail']['video']['dynamic_cover']['url_list'][0]
                                 video_desc = json_response['aweme_detail']['desc'].replace(' ', '')
                              */
-                            videoDescList.add(FileUtils.replaceFileName(response
-                                .data['aweme_detail']['desc']
-                                .replaceAll(' ', '')));
+                            videoDescList.add(folderTiktok +
+                                Platform.pathSeparator +
+                                FileUtils.replaceFileName(response
+                                    .data['aweme_detail']['desc']
+                                    .replaceAll(' ', '')));
                             urlDownloadList.add(response.data["aweme_detail"]
                                 ["video"]["play_addr"]["url_list"][0]);
                             imageList.add(response.data['aweme_detail']['video']
@@ -242,7 +259,6 @@ class HomePageState extends State<HomePage> {
                             .catchError((e) {
                           showLog("请求异常：$e");
                         });
-
                         setState(() {
                           imageList.clear();
                           urlDownloadList.clear();
@@ -250,7 +266,8 @@ class HomePageState extends State<HomePage> {
                           if (result.data.toString().contains("200")) {
                             DouYinSingle single =
                                 DouYinSingle.fromJson(result.data);
-                            videoDescList.add(
+                            videoDescList.add(folderDouYin +
+                                Platform.pathSeparator +
                                 FileUtils.replaceFileName(single.videoDesc!));
                             urlDownloadList.add(single.videoUrl!);
                             imageList.add(single.coverImageUrl!);
@@ -289,13 +306,23 @@ class HomePageState extends State<HomePage> {
                         if (result.data.toString().contains("200")) {
                           DouYinList list = DouYinList.fromJson(result.data);
                           if (list.videoUrlList.isNotEmpty) {
+                            String secUid = list.secUid!;
+                            String folderDouYinSecUid =
+                                folderDouYin + Platform.pathSeparator + secUid;
+
+                            //创建对呀secuid的目录
+                            if (!Directory(folderDouYinSecUid).existsSync()) {
+                              Directory(folderDouYinSecUid).create();
+                            }
                             _maxCursorTextController.text =
                                 list.maxCursor.toString();
                             for (int i = 0;
                                 i < list.coverImageUrlList.length;
                                 i++) {
-                              videoDescList.add(FileUtils.replaceFileName(
-                                  list.videoDescList[i]));
+                              videoDescList.add(folderDouYinSecUid +
+                                  Platform.pathSeparator +
+                                  FileUtils.replaceFileName(
+                                      list.videoDescList[i]));
                               urlDownloadList.add(list.videoUrlList[i]);
                               imageList.add(list.coverImageUrlList[i]);
                             }
@@ -341,8 +368,7 @@ class HomePageState extends State<HomePage> {
                       String end = urlDownloadList[i].toString().endsWith("mp3")
                           ? "mp3"
                           : "mp4";
-                      String filePath =
-                          "${Constants.CACHE_PATH + Platform.pathSeparator + videoDescList[i]}.$end";
+                      String filePath = "${videoDescList[i]}.$end";
                       if (File(filePath).existsSync()) {
                         showLog(
                             "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
