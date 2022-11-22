@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:short_video_spider_client/model/douyin_single_images.dart';
 import 'package:short_video_spider_client/pages/mobile/download_page.dart';
 import 'package:short_video_spider_client/utils/dio_util.dart';
 import 'package:short_video_spider_client/utils/file_util.dart';
@@ -264,6 +265,28 @@ class HomePageState extends State<HomePage> {
                           urlDownloadList.clear();
                           videoDescList.clear();
                           if (result.data.toString().contains("200")) {
+                            //解析图片信息
+                            if (result.data
+                                .toString()
+                                .contains('image_url_list')) {
+                              DouYinSingleImages singleImages =
+                                  DouYinSingleImages.fromJson(result.data);
+                              for (int i = 0;
+                                  i < singleImages.coverImageUrlList.length;
+                                  i++) {
+                                videoDescList.add(folderDouYin +
+                                    Platform.pathSeparator +
+                                    FileUtils.replaceFileName(
+                                        '${singleImages.desc}_$i.jpeg'));
+                                urlDownloadList
+                                    .add(singleImages.coverImageUrlList[i]);
+                                imageList
+                                    .add(singleImages.coverImageUrlList[i]);
+                                showLog("获取图片地址成功");
+                              }
+                              return;
+                            }
+                            //单个视频信息
                             DouYinSingle single =
                                 DouYinSingle.fromJson(result.data);
                             videoDescList.add(folderDouYin +
@@ -365,32 +388,60 @@ class HomePageState extends State<HomePage> {
                     }
                     for (int i = 0; i < urlDownloadList.length; i++) {
                       isFinish = false;
-                      String end = urlDownloadList[i].toString().endsWith("mp3")
-                          ? "mp3"
-                          : "mp4";
-                      String filePath = "${videoDescList[i]}.$end";
-                      if (File(filePath).existsSync()) {
-                        showLog(
-                            "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
-                        if (i == urlDownloadList.length - 1) {
-                          isFinish = true;
+                      if (videoDescList[i].toString().endsWith('jpeg')) {
+                        if (File(videoDescList[i]).existsSync()) {
+                          showLog(
+                              "一共${urlDownloadList.length}个图片：第${i + 1}个图片已存在,跳过");
+                          if (i == urlDownloadList.length - 1) {
+                            isFinish = true;
+                          }
+                          continue;
                         }
-                        continue;
+                        await DioUtils.getDio()
+                            .download(urlDownloadList[i], videoDescList[i],
+                                onReceiveProgress: (int count, int total) {
+                          showLog(
+                              "一共${urlDownloadList.length}个图片：\n正在下载第${i + 1}个图片：${(count / total * 100).toInt()}%",
+                              isAppend: false);
+                          if (i == urlDownloadList.length - 1 &&
+                              count == total) {
+                            showLog("所有图片下载完成");
+                            isFinish = true;
+                          }
+                        }).catchError((e) {
+                          showLog("出现异常：${e.toString()}");
+                          isFinish = true;
+                        });
+                      } else {
+                        String end =
+                            urlDownloadList[i].toString().endsWith("mp3")
+                                ? "mp3"
+                                : "mp4";
+                        String filePath = "${videoDescList[i]}.$end";
+                        if (File(filePath).existsSync()) {
+                          showLog(
+                              "一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
+                          if (i == urlDownloadList.length - 1) {
+                            isFinish = true;
+                          }
+                          continue;
+                        }
+                        await DioUtils.getDio()
+                            .download(urlDownloadList[i], filePath,
+                                onReceiveProgress: (int count, int total) {
+                          showLog(
+                              "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
+                              isAppend: false);
+                          if (i == urlDownloadList.length - 1 &&
+                              count == total) {
+                            showLog("所有视频下载完成");
+                            isFinish = true;
+                          }
+                        }).catchError((e) {
+                          showLog("出现异常：${e.toString()}");
+                          isFinish = true;
+                        });
                       }
-                      await DioUtils.getDio()
-                          .download(urlDownloadList[i], filePath,
-                              onReceiveProgress: (int count, int total) {
-                        showLog(
-                            "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
-                            isAppend: false);
-                        if (i == urlDownloadList.length - 1 && count == total) {
-                          showLog("所有视频下载完成");
-                          isFinish = true;
-                        }
-                      }).catchError((e) {
-                        showLog("出现异常：${e.toString()}");
-                        isFinish = true;
-                      });
                     }
                   },
                   child: const Text("下载视频"))),

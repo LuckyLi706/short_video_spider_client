@@ -123,42 +123,69 @@ Widget _getBodyWidget(BuildContext context) {
           }
           for (int i = 0; i < urlDownloadList.length; i++) {
             isFinish = false;
-            String end =
-                urlDownloadList[i].toString().endsWith("mp3") ? "mp3" : "mp4";
-            String filePath = Constants.CACHE_PATH +
-                Platform.pathSeparator +
-                videoDescList[i];
-            //安卓文件路径有限制,大约127个字符
-            //参考：https://stackoverflow.com/questions/13204807/max-file-name-length-in-android
-            if (filePath.length > 120) {
-              filePath = "${filePath.substring(0, 120)}.$end";
+            if (videoDescList[i].toString().endsWith('jpeg')) {
+              if (File(videoDescList[i]).existsSync()) {
+                showLog("一共${urlDownloadList.length}个图片：第${i + 1}个图片已存在,跳过");
+                if (i == urlDownloadList.length - 1) {
+                  isFinish = true;
+                }
+                continue;
+              }
+              await DioUtils.getDio()
+                  .download(urlDownloadList[i], videoDescList[i],
+                      onReceiveProgress: (int count, int total) {
+                showLog(
+                    "一共${urlDownloadList.length}个图片：\n正在下载第${i + 1}个图片：${(count / total * 100).toInt()}%",
+                    isAppend: false);
+                if (i == urlDownloadList.length - 1 && count == total) {
+                  showLog("所有图片下载完成");
+                  isFinish = true;
+                }
+              }).catchError((e) {
+                showLog("出现异常：${e.toString()}");
+                isFinish = true;
+              });
+              final result =
+                  await ImageGallerySaver.saveFile(videoDescList[i]); //保存到相册里面去
+              print(result);
             } else {
-              filePath = "$filePath.$end";
-            }
-            if (File(filePath).existsSync()) {
-              showLog("一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
-              if (i == urlDownloadList.length - 1) {
-                isFinish = true;
+              String end =
+                  urlDownloadList[i].toString().endsWith("mp3") ? "mp3" : "mp4";
+              String filePath = Constants.CACHE_PATH +
+                  Platform.pathSeparator +
+                  videoDescList[i];
+              //安卓文件路径有限制,大约127个字符
+              //参考：https://stackoverflow.com/questions/13204807/max-file-name-length-in-android
+              if (filePath.length > 120) {
+                filePath = "${filePath.substring(0, 120)}.$end";
+              } else {
+                filePath = "$filePath.$end";
               }
-              continue;
-            }
-            await DioUtils.getDio().download(urlDownloadList[i], filePath,
-                onReceiveProgress: (int count, int total) {
-              isFinish = false;
-              showLog(
-                  "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
-                  isAppend: false);
-              if (i == urlDownloadList.length - 1) {
-                isFinish = true;
-                showLog("所有视频下载完成", isAppend: false);
+              if (File(filePath).existsSync()) {
+                showLog("一共${urlDownloadList.length}个视频：第${i + 1}个视频已存在,跳过");
+                if (i == urlDownloadList.length - 1) {
+                  isFinish = true;
+                }
+                continue;
               }
-            }).catchError((e) {
-              isFinish = true;
-              showLog("出现异常：${e.toString()}");
-            });
-            final result =
-                await ImageGallerySaver.saveFile(filePath); //保存到相册里面去
-            print(result);
+              await DioUtils.getDio().download(urlDownloadList[i], filePath,
+                  onReceiveProgress: (int count, int total) {
+                isFinish = false;
+                showLog(
+                    "一共${urlDownloadList.length}个视频：\n正在下载第${i + 1}个视频：${(count / total * 100).toInt()}%",
+                    isAppend: false);
+                if (i == urlDownloadList.length - 1) {
+                  isFinish = true;
+                  showLog("所有视频下载完成", isAppend: false);
+                }
+              }).catchError((e) {
+                isFinish = true;
+                showLog("出现异常：${e.toString()}");
+              });
+              final result =
+                  await ImageGallerySaver.saveFile(filePath); //保存到相册里面去
+              print(result);
+            }
           }
         },
         child: const Text("开始下载")),

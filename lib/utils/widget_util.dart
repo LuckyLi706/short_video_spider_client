@@ -33,7 +33,7 @@ class WidgetUtils {
               Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: CopyText(
-                    "存储位置：${Constants.CACHE_PATH}${Platform.pathSeparator}${videoDescList[index]}.${urlDownloadList[index].toString().endsWith("mp3") ? "mp3" : "mp4"}"),
+                    "存储位置：${getCacheText(urlDownloadList, videoDescList, index)}"),
               ),
               Padding(
                   padding: const EdgeInsets.only(left: 10),
@@ -44,6 +44,15 @@ class WidgetUtils {
       },
       //分割器构造器
     );
+  }
+
+  static String getCacheText(
+      var urlDownloadList, var videoDescList, int index) {
+    if (videoDescList[index].toString().endsWith('jpeg')) {
+      return "${Constants.CACHE_PATH}${Platform.pathSeparator}${videoDescList[index]}";
+    } else {
+      return "${Constants.CACHE_PATH}${Platform.pathSeparator}${videoDescList[index]}.${urlDownloadList[index].toString().endsWith("mp3") ? "mp3" : "mp4"}";
+    }
   }
 
   static Widget getLogWidget(var scrollController, var logTextController) {
