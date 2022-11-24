@@ -180,7 +180,7 @@ void showSettingDialog(BuildContext context) async {
               content: Center(
                   child: SizedBox(
                       width: 0.5 * ScreenUtils.width,
-                      height: 0.4 * ScreenUtils.height,
+                      height: 0.45 * ScreenUtils.height,
                       child: Column(
                         children: [
                           Row(
