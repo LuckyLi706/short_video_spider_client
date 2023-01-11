@@ -2,6 +2,11 @@
 
 需要配合服务端一起使用，可以下载单个视频，也支持下载用户下的多个视频。客户端已集成线上地址，服务器是用Python去抓取真实地址的，想看服务器代码，请点[这里](https://github.com/LuckyLi706/ShortVideoSpider)，并且提供提供api接口。客户端支持Android、Windows、Macos、IOS（没有签名文件，需要自己打包），Linux（没适配）
 
+## 说明
+
+1. 个人服务器到期了，服务暂时停了。
+2. 抖音现在需要Cookie验证了，可以自己搭建服务器。服务器地址：[ShortVideoSpider](https://github.com/LuckyLi706/ShortVideoSpider)
+
 ## 支持平台
 + 抖音（支持单个下载和多个下载）
 + tiktok（支持支持单个下载，请先在设置里面设置代理服务器）
